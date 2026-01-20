@@ -4,16 +4,23 @@
 <meta charset="UTF-8">
 <title>Operator Admin Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+body{font-family:Inter,system-ui,sans-serif}
+</style>
 </head>
 
 <body class="bg-slate-100">
 
 <!-- ================= LOGIN ================= -->
 <div id="loginPage" class="min-h-screen flex items-center justify-center">
-  <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-    <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
+  <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-8">
+    <h1 class="text-2xl font-bold text-center mb-6 text-indigo-600">
+      Operator / Admin Login
+    </h1>
 
     <select id="role" class="w-full p-3 border rounded mb-4">
       <option value="">Select Role</option>
@@ -21,246 +28,250 @@
       <option value="admin">Admin</option>
     </select>
 
-    <input id="username" class="w-full p-3 border rounded mb-4" placeholder="Username">
+    <input id="username" class="w-full p-3 border rounded mb-4" placeholder="Username / SOL ID">
     <input id="password" type="password" class="w-full p-3 border rounded mb-6" placeholder="Password">
 
-    <button onclick="login()" class="w-full bg-blue-600 text-white py-3 rounded font-semibold">
+    <button onclick="login()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded font-semibold">
       Login
     </button>
 
-    <p id="error" class="hidden text-center text-red-600 mt-3 font-semibold">
+    <p id="error" class="hidden text-red-600 text-center mt-4 font-semibold">
       Invalid login details
     </p>
   </div>
 </div>
 
 <!-- ================= OPERATOR ================= -->
-<div id="operatorDash" class="hidden p-6">
-  <h1 class="text-2xl font-bold mb-2">Operator Dashboard</h1>
-  <p class="mb-4">Logged in as: <b id="opName"></b></p>
-
-  <div class="bg-white p-6 rounded shadow max-w-md">
-    <input type="file" id="fileInput" accept=".xlsx,.csv" class="mb-4">
-    <button onclick="uploadFile()" class="w-full bg-green-600 text-white py-2 rounded">
-      Upload Excel / CSV
-    </button>
-    <p id="uploadMsg" class="hidden mt-3 text-green-600 font-semibold">
-      ✔ File uploaded successfully
-    </p>
+<div id="operatorDash" class="hidden min-h-screen">
+  <div class="bg-white shadow px-6 py-4 flex justify-between items-center">
+    <h2 id="welcomeText" class="font-semibold"></h2>
+    <div id="operatorInfo" class="text-sm font-semibold text-gray-600"></div>
   </div>
 
-  <button onclick="logout()" class="mt-6 text-red-600">Logout</button>
+  <div class="p-6">
+    <div class="bg-white rounded-xl shadow p-6 max-w-md">
+      <h3 class="font-bold mb-4">Upload Excel / CSV</h3>
+      <input type="file" id="fileInput" accept=".xlsx,.csv" class="mb-4">
+      <button onclick="uploadFile()" class="w-full bg-green-600 text-white py-2 rounded">
+        Upload File
+      </button>
+      <p id="uploadMsg" class="hidden mt-3 text-green-600 font-semibold">
+        ✔ File uploaded successfully
+      </p>
+    </div>
+
+    <button onclick="logout()" class="mt-6 text-red-600 font-semibold">Logout</button>
+  </div>
 </div>
 
 <!-- ================= ADMIN ================= -->
-<div id="adminDash" class="hidden p-6">
-  <h1 class="text-2xl font-bold mb-4">Admin Dashboard</h1>
+<div id="adminDash" class="hidden min-h-screen p-6">
 
-  <div class="flex flex-wrap gap-4 mb-6">
-    <select id="operatorFilter" onchange="renderCards()" class="p-2 border rounded">
-      <option value="all">All Operators</option>
-    </select>
+<h1 class="text-2xl font-bold mb-6">Admin Dashboard</h1>
 
-    <select id="typeFilter" onchange="renderCards()" class="p-2 border rounded">
-      <option value="all">All TYPE</option>
-      <option value="U">TYPE (U)</option>
-      <option value="N">TYPE (N)</option>
-    </select>
+<!-- FILTERS -->
+<div class="flex flex-wrap gap-4 mb-6">
+  <select id="adminOperatorFilter" class="p-2 border rounded">
+    <option value="all">All Operators</option>
+  </select>
 
-    <button id="downloadBtn" onclick="downloadExcel()"
-      class="px-4 py-2 bg-indigo-600 text-white rounded disabled:opacity-40"
-      disabled>
-      Download Uploaded Excel
-    </button>
-  </div>
+  <select id="dateFilter" class="p-2 border rounded">
+    <option value="today">Today</option>
+    <option value="week">This Week</option>
+    <option value="month">This Month</option>
+    <option value="custom">Custom</option>
+  </select>
 
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+  <input type="date" id="fromDate" class="p-2 border rounded">
+  <input type="date" id="toDate" class="p-2 border rounded">
 
-    <div class="bg-white p-5 rounded-xl shadow">
-      <p class="text-gray-500 text-sm">Total Records</p>
-      <p id="totalRecords" class="text-3xl font-bold">0</p>
-    </div>
-
-    <div class="bg-white p-5 rounded-xl shadow">
-      <p class="text-gray-500 text-sm">Biometric Update (YES)</p>
-      <p id="bioYes" class="text-3xl font-bold text-green-600">0</p>
-    </div>
-
-    <div class="bg-white p-5 rounded-xl shadow">
-      <p class="text-gray-500 text-sm">Biometric Update (NO)</p>
-      <p id="bioNo" class="text-3xl font-bold text-red-600">0</p>
-    </div>
-
-    <div class="bg-white p-5 rounded-xl shadow">
-      <p class="text-gray-500 text-sm">TYPE (U)</p>
-      <p id="typeU" class="text-3xl font-bold text-blue-600">0</p>
-    </div>
-
-    <div class="bg-white p-5 rounded-xl shadow">
-      <p class="text-gray-500 text-sm">TYPE (N)</p>
-      <p id="typeN" class="text-3xl font-bold text-purple-600">0</p>
-    </div>
-
-    <div class="bg-white p-5 rounded-xl shadow">
-      <p class="text-gray-500 text-sm">Total Amount Charged</p>
-      <p id="totalAmount" class="text-3xl font-bold text-green-700">₹0.00</p>
-    </div>
-
-    <div class="bg-white p-5 rounded-xl shadow">
-      <p class="text-gray-500 text-sm">New Enrollment Amount</p>
-      <p id="newEnroll" class="text-3xl font-bold text-blue-600">₹0.00</p>
-    </div>
-
-    <div class="bg-white p-5 rounded-xl shadow">
-      <p class="text-gray-500 text-sm">Last Upload</p>
-      <p id="lastUpload" class="text-lg font-semibold">--</p>
-    </div>
-
-  </div>
-
-  <button onclick="logout()" class="mt-6 text-red-600">Logout</button>
+  <button onclick="downloadFilteredExcel()"
+    class="bg-indigo-600 text-white px-4 py-2 rounded">
+    Download Excel
+  </button>
 </div>
 
-<!-- ================= SCRIPT ================= -->
+<!-- KPI CARDS -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+
+  <div class="bg-white p-5 rounded-xl shadow">
+    <p class="text-sm text-gray-500">Total Records</p>
+    <p id="cardTotalRecords" class="text-3xl font-bold">0</p>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl shadow">
+    <p class="text-sm text-gray-500">Biometric Update (YES)</p>
+    <p id="cardBioYes" class="text-3xl font-bold text-green-600">0</p>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl shadow">
+    <p class="text-sm text-gray-500">Biometric Update (NO)</p>
+    <p id="cardBioNo" class="text-3xl font-bold text-red-500">0</p>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl shadow">
+    <p class="text-sm text-gray-500">Total Amount Charged</p>
+    <p id="cardTotalAmount" class="text-3xl font-bold text-green-700">₹0.00</p>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl shadow">
+    <p class="text-sm text-gray-500">Update Enrollment Amount</p>
+    <p id="cardEnrollAmount" class="text-3xl font-bold text-indigo-600">₹0.00</p>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl shadow">
+    <p class="text-sm text-gray-500">Last Upload</p>
+    <p id="cardLastUpload" class="font-semibold">--</p>
+  </div>
+
+</div>
+
+<button onclick="logout()" class="text-red-600 font-semibold">Logout</button>
+</div>
+
 <script>
-let currentOperator = "";
-
-const operatorUsers = {
-  "operator1": "1234",
-  "operator2": "1234"
+/* ===== USERS ===== */
+const operators = {
+  SOL1505:{name:"Jaimish Darji",password:"1234"},
+  SOL1009:{name:"Vipul Katara",password:"1234"}
 };
+let currentOperator=null;
 
-function login() {
+/* ===== LOGIN ===== */
+function login(){
   error.classList.add("hidden");
-
-  const r = role.value;
-  const u = username.value.trim().toLowerCase();
-  const p = password.value.trim();
-
-  if (!r || !u || !p) {
-    error.classList.remove("hidden");
+  const r=role.value,u=username.value.trim().toUpperCase(),p=password.value;
+  if(r==="operator"&&operators[u]&&operators[u].password===p){
+    currentOperator=u;
+    welcomeText.innerText=`Welcome, ${operators[u].name}`;
+    operatorInfo.innerText=`${operators[u].name} (${u})`;
+    loginPage.classList.add("hidden");
+    operatorDash.classList.remove("hidden");
     return;
   }
-
-  if (r === "operator") {
-    if (operatorUsers[u] && operatorUsers[u] === p) {
-      currentOperator = u;
-      opName.innerText = u;
-      loginPage.classList.add("hidden");
-      operatorDash.classList.remove("hidden");
-      return;
-    }
+  if(r==="admin"&&u==="ADMIN"&&p==="admin123"){
+    loginPage.classList.add("hidden");
+    adminDash.classList.remove("hidden");
+    loadAdmin();
+    return;
   }
-
-  if (r === "admin") {
-    if (u === "admin" && p === "admin123") {
-      loginPage.classList.add("hidden");
-      adminDash.classList.remove("hidden");
-      loadAdmin();
-      return;
-    }
-  }
-
   error.classList.remove("hidden");
 }
+function logout(){location.reload();}
 
-function logout() {
-  location.reload();
-}
-
-/* ---------- Upload ---------- */
-function uploadFile() {
-  const file = fileInput.files[0];
-  if (!file) return alert("Please select a file");
-
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wb = XLSX.read(e.target.result, { type: "binary" });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-
-    const all = JSON.parse(localStorage.getItem("multiData") || "{}");
-    all[currentOperator] = {
+/* ===== UPLOAD ===== */
+function uploadFile(){
+  const file=fileInput.files[0];
+  if(!file) return alert("Select file");
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const wb=XLSX.read(e.target.result,{type:"binary"});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    const uploads=JSON.parse(localStorage.getItem("uploads")||"[]");
+    uploads.push({
+      operatorId:currentOperator,
+      operatorName:operators[currentOperator].name,
+      fileName:file.name,
+      fileData:e.target.result,
       rows,
-      time: new Date().toLocaleString(),
-      fileName: file.name,
-      fileData: e.target.result
-    };
-
-    localStorage.setItem("multiData", JSON.stringify(all));
+      uploadTime:new Date().toISOString()
+    });
+    localStorage.setItem("uploads",JSON.stringify(uploads));
     uploadMsg.classList.remove("hidden");
   };
   reader.readAsBinaryString(file);
 }
 
-/* ---------- Admin ---------- */
+/* ===== ADMIN ===== */
 function loadAdmin() {
-  const data = JSON.parse(localStorage.getItem("multiData") || "{}");
-  operatorFilter.innerHTML = `<option value="all">All Operators</option>`;
-  Object.keys(data).forEach(op => {
-    operatorFilter.innerHTML += `<option value="${op}">${op}</option>`;
-  });
-  renderCards();
-}
+  const uploads = JSON.parse(localStorage.getItem("uploads") || "[]");
 
-function normalizeType(v) {
-  return String(v || "").trim().toUpperCase();
-}
-function normalizeBio(v) {
-  const x = String(v || "").trim().toUpperCase();
-  return ["YES", "Y", "1", "TRUE"].includes(x);
-}
+  adminOperatorFilter.innerHTML =
+    `<option value="all">All Operators</option>`;
 
-function renderCards() {
-  const data = JSON.parse(localStorage.getItem("multiData") || {});
-  const op = operatorFilter.value;
-  const typeSel = typeFilter.value;
-
-  let rows = [];
-  let time = "--";
-
-  if (op === "all") {
-    Object.values(data).forEach(d => rows.push(...d.rows));
-    downloadBtn.disabled = true;
-  } else if (data[op]) {
-    rows = data[op].rows;
-    time = data[op].time;
-    downloadBtn.disabled = false;
-  }
-
-  if (typeSel !== "all") {
-    rows = rows.filter(r => normalizeType(r.TYPE) === typeSel);
-  }
-
-  let yes = 0, no = 0, u = 0, n = 0, total = 0, newAmt = 0;
-
-  rows.forEach(r => {
-    const t = normalizeType(r.TYPE);
-    normalizeBio(r.MANDATORY_BIO_METRIC_UPLOAD_ONLY) ? yes++ : no++;
-    if (t === "U") u++;
-    if (t === "N") n++;
-    total += Number(r.TOTAL_AMOUNT_CHARGED || 0);
-    newAmt += Number(r.AMOUNT_CHARGED_FOR_NEW_ENROLLMENT || 0);
+  // unique operators from uploads
+  const uniqueOps = {};
+  uploads.forEach(u => {
+    uniqueOps[u.operatorId] = u.operatorName;
   });
 
-  totalRecords.innerText = rows.length;
-  bioYes.innerText = yes;
-  bioNo.innerText = no;
-  typeU.innerText = u;
-  typeN.innerText = n;
-  totalAmount.innerText = "₹" + total.toFixed(2);
-  newEnroll.innerText = "₹" + newAmt.toFixed(2);
-  lastUpload.innerText = time;
+  Object.entries(uniqueOps).forEach(([id, name]) => {
+    adminOperatorFilter.innerHTML +=
+      `<option value="${id}">${name}</option>`;
+  });
+
+  applyAdminFilters();
 }
 
-function downloadExcel() {
-  const op = operatorFilter.value;
-  const data = JSON.parse(localStorage.getItem("multiData") || {});
-  if (!data[op]) return;
+adminOperatorFilter.onchange=
+dateFilter.onchange=
+fromDate.onchange=
+toDate.onchange=applyAdminFilters;
 
-  const a = document.createElement("a");
-  a.href = "data:application/octet-stream;base64," + btoa(data[op].fileData);
-  a.download = data[op].fileName;
-  a.click();
+function normalizeBio(v){
+  return ["YES","Y","1","TRUE"].includes(String(v||"").toUpperCase().trim());
+}
+
+function isDateInRange(d){
+  const now=new Date();
+  if(dateFilter.value==="today")
+    return d.toDateString()===now.toDateString();
+  if(dateFilter.value==="week"){
+    const s=new Date();s.setDate(now.getDate()-7);s.setHours(0,0,0,0);
+    return d>=s&&d<=now;
+  }
+  if(dateFilter.value==="month")
+    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  if(dateFilter.value==="custom"&&fromDate.value&&toDate.value){
+    const f=new Date(fromDate.value),t=new Date(toDate.value);
+    f.setHours(0,0,0,0);t.setHours(23,59,59,999);
+    return d>=f&&d<=t;
+  }
+  return true;
+}
+
+function applyAdminFilters(){
+  const uploads=JSON.parse(localStorage.getItem("uploads")||"[]");
+  const op=adminOperatorFilter.value;
+  let rows=[],last="--";
+
+  uploads.forEach(u=>{
+    if(op!=="all"&&u.operatorId!==op) return;
+    const d=new Date(u.uploadTime);
+    if(isDateInRange(d)){
+      rows.push(...u.rows);
+      last=new Date(u.uploadTime).toLocaleString();
+    }
+  });
+
+  let yes=0,no=0,amt=0,en=0;
+  rows.forEach(r=>{
+    normalizeBio(r.MANDATORY_BIO_METRIC_UPLOAD_ONLY)?yes++:no++;
+    amt+=Number(r.TOTAL_AMOUNT_CHARGED||0);
+    en+=Number(r.AMOUNT_CHARGED_FOR_NEW_ENROLLMENT||0);
+  });
+
+  cardTotalRecords.innerText=rows.length;
+  cardBioYes.innerText=yes;
+  cardBioNo.innerText=no;
+  cardTotalAmount.innerText="₹"+amt.toFixed(2);
+  cardEnrollAmount.innerText="₹"+en.toFixed(2);
+  cardLastUpload.innerText=last;
+}
+
+/* ===== DOWNLOAD ===== */
+function downloadFilteredExcel(){
+  const uploads=JSON.parse(localStorage.getItem("uploads")||"[]");
+  const op=adminOperatorFilter.value;
+  uploads.forEach(u=>{
+    const d=new Date(u.uploadTime);
+    if((op==="all"||u.operatorId===op)&&isDateInRange(d)){
+      const a=document.createElement("a");
+      a.href="data:application/octet-stream;base64,"+btoa(u.fileData);
+      a.download=u.fileName;
+      a.click();
+    }
+  });
 }
 </script>
 
